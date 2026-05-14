@@ -1,8 +1,8 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { useState } from 'react';
-import { Check, Plus, Trash2 } from 'lucide-react';
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import type { DailyTodo, DailyTodoCompletion } from '../types';
-import { todayISO } from '../utils/date';
+import { addDays, todayISO } from '../utils/date';
 import { createId } from '../utils/id';
 
 interface DailyTodosPageProps {
@@ -30,15 +30,23 @@ const formatDateLabel = (dateISO: string) => {
 
 function DailyTodosPage({ todos, setTodos, completions, setCompletions }: DailyTodosPageProps) {
   const [title, setTitle] = useState('');
+  const [selectedDate, setSelectedDate] = useState(todayISO());
   const today = todayISO();
-  const todayCompletions = completions.filter((completion) => completion.completedDate === today);
+  const selectedDateCompletions = completions.filter((completion) => completion.completedDate === selectedDate);
   const historyGroups = completions
-    .filter((completion) => completion.completedDate !== today)
+    .filter((completion) => completion.completedDate !== selectedDate)
     .reduce<Record<string, DailyTodoCompletion[]>>((groups, completion) => {
       groups[completion.completedDate] = [...(groups[completion.completedDate] ?? []), completion];
       return groups;
     }, {});
   const historyDates = Object.keys(historyGroups).sort((a, b) => b.localeCompare(a));
+  const recordTitle = selectedDate === today ? '今日已完成' : `${formatDateLabel(selectedDate)} 已完成`;
+  const emptyRecordText =
+    selectedDate === today
+      ? '今天还没有完成记录。'
+      : selectedDate < today
+        ? '这一天还没有完成记录。'
+        : '未来这一天还没有记录。';
 
   const addTodo = (event: FormEvent) => {
     event.preventDefault();
@@ -74,6 +82,10 @@ function DailyTodosPage({ todos, setTodos, completions, setCompletions }: DailyT
 
   const removeTodo = (todoId: string) => {
     setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== todoId));
+  };
+
+  const shiftSelectedDate = (days: number) => {
+    setSelectedDate((currentDate) => addDays(currentDate, days));
   };
 
   return (
@@ -152,20 +164,61 @@ function DailyTodosPage({ todos, setTodos, completions, setCompletions }: DailyT
       </div>
 
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-panel">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold text-slate-950">今日已完成</h3>
-          <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600">
-            {todayCompletions.length} 项
-          </span>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-slate-950">{recordTitle}</h3>
+            <p className="mt-1 text-sm text-slate-500">{selectedDate}</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => shiftSelectedDate(-1)}
+              className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+              aria-label="查看前一天"
+              title="查看前一天"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <label className="relative">
+              <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+                className="focus-ring min-h-10 rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm text-slate-700"
+                aria-label="选择记录日期"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setSelectedDate(today)}
+              className="focus-ring inline-flex min-h-10 items-center justify-center rounded-lg border border-teal-200 bg-teal-50 px-3 text-sm font-medium text-teal-700 hover:bg-teal-100"
+            >
+              今天
+            </button>
+            <button
+              type="button"
+              onClick={() => shiftSelectedDate(1)}
+              className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+              aria-label="查看后一天"
+              title="查看后一天"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600">
+              {selectedDateCompletions.length} 项
+            </span>
+          </div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {todayCompletions.length === 0 && (
+          {selectedDateCompletions.length === 0 && (
             <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-              今天还没有完成记录。
+              {emptyRecordText}
             </div>
           )}
 
-          {todayCompletions.map((completion) => (
+          {selectedDateCompletions.map((completion) => (
             <article key={completion.id} className="rounded-lg border border-teal-100 bg-teal-50 p-4">
               <p className="break-words text-sm font-semibold leading-6 text-slate-950">{completion.title}</p>
               <p className="mt-2 text-xs text-teal-700">完成于 {completion.completedAt}</p>

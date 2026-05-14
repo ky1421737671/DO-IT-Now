@@ -1,6 +1,6 @@
 export type Priority = 'high' | 'medium' | 'low';
 
-export type PageKey = 'home' | 'todos' | 'plan' | 'reminders' | 'memos';
+export type PageKey = 'home' | 'todos' | 'plan' | 'reminders' | 'memos' | 'weight';
 
 export interface StudyTask {
   id: string;
@@ -71,4 +71,17 @@ export interface DailyTodoCompletion {
   title: string;
   completedDate: string;
   completedAt: string;
+}
+
+export interface WeightProfile {
+  heightCm: number;
+  targetWeightKg: number;
+}
+
+export interface WeightEntry {
+  id: string;
+  date: string;
+  time?: string;
+  weightKg: number;
+  note: string;
 }

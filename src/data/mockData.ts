@@ -1,4 +1,13 @@
-import type { DailyTodo, DailyTodoCompletion, ExamPlan, HabitReminder, Memo, StudyTask } from '../types';
+import type {
+  DailyTodo,
+  DailyTodoCompletion,
+  ExamPlan,
+  HabitReminder,
+  Memo,
+  StudyTask,
+  WeightEntry,
+  WeightProfile,
+} from '../types';
 import { addDays, getWeekStart, todayISO, tomorrowISO } from '../utils/date';
 
 const today = todayISO();
@@ -162,3 +171,32 @@ export const initialDailyTodos: DailyTodo[] = [
 ];
 
 export const initialDailyTodoCompletions: DailyTodoCompletion[] = [];
+
+export const initialWeightProfile: WeightProfile = {
+  heightCm: 170,
+  targetWeightKg: 65,
+};
+
+export const initialWeightEntries: WeightEntry[] = [
+  {
+    id: 'weight-today',
+    date: today,
+    time: '07:30',
+    weightKg: 68.2,
+    note: '早起空腹记录',
+  },
+  {
+    id: 'weight-yesterday',
+    date: addDays(today, -1),
+    time: '07:40',
+    weightKg: 68.5,
+    note: '',
+  },
+  {
+    id: 'weight-week-start',
+    date: addDays(today, -6),
+    time: '08:00',
+    weightKg: 69.1,
+    note: '',
+  },
+];

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bell, CalendarCheck, ClipboardList, ListTodo, NotebookPen } from 'lucide-react';
+import { Bell, CalendarCheck, ClipboardList, ListTodo, NotebookPen, Scale } from 'lucide-react';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import PlanPage from './pages/PlanPage';
 import RemindersPage from './pages/RemindersPage';
 import MemosPage from './pages/MemosPage';
 import DailyTodosPage from './pages/DailyTodosPage';
+import WeightPage from './pages/WeightPage';
 import {
   initialDailyTodoCompletions,
   initialDailyTodos,
@@ -13,9 +14,21 @@ import {
   initialMemos,
   initialPlan,
   initialTasks,
+  initialWeightEntries,
+  initialWeightProfile,
 } from './data/mockData';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import type { DailyTodo, DailyTodoCompletion, ExamPlan, HabitReminder, Memo, PageKey, StudyTask } from './types';
+import type {
+  DailyTodo,
+  DailyTodoCompletion,
+  ExamPlan,
+  HabitReminder,
+  Memo,
+  PageKey,
+  StudyTask,
+  WeightEntry,
+  WeightProfile,
+} from './types';
 import { todayISO } from './utils/date';
 
 const navItems = [
@@ -24,6 +37,7 @@ const navItems = [
   { key: 'plan' as const, label: '考研计划', icon: CalendarCheck },
   { key: 'reminders' as const, label: '提醒', icon: Bell },
   { key: 'memos' as const, label: '备忘', icon: NotebookPen },
+  { key: 'weight' as const, label: '轻体记录', icon: Scale },
 ];
 
 function App() {
@@ -36,6 +50,14 @@ function App() {
   const [dailyTodoCompletions, setDailyTodoCompletions] = useLocalStorage<DailyTodoCompletion[]>(
     'kaoyan.daily-todo-completions',
     initialDailyTodoCompletions,
+  );
+  const [weightProfile, setWeightProfile] = useLocalStorage<WeightProfile>(
+    'kaoyan.weight-profile',
+    initialWeightProfile,
+  );
+  const [weightEntries, setWeightEntries] = useLocalStorage<WeightEntry[]>(
+    'kaoyan.weight-entries',
+    initialWeightEntries,
   );
   const [lastOpenedDate, setLastOpenedDate] = useLocalStorage<string>('kaoyan.last-opened-date', todayISO());
 
@@ -97,6 +119,14 @@ function App() {
         <RemindersPage tasks={tasks} habits={habits} setTasks={setTasks} setHabits={setHabits} />
       )}
       {activePage === 'memos' && <MemosPage memos={memos} setMemos={setMemos} setTasks={setTasks} />}
+      {activePage === 'weight' && (
+        <WeightPage
+          profile={weightProfile}
+          setProfile={setWeightProfile}
+          entries={weightEntries}
+          setEntries={setWeightEntries}
+        />
+      )}
     </Layout>
   );
 }

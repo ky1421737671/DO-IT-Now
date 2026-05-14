@@ -24,6 +24,7 @@ const pageTitles: Record<PageKey, string> = {
   plan: '考研计划',
   reminders: '提醒',
   memos: '备忘',
+  weight: '轻体记录',
 };
 
 const formatDate = () => {
@@ -53,7 +54,7 @@ function Layout({ navItems, activePage, onNavigate, reminderCounts, children }: 
             </div>
           </div>
 
-          <nav className="grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-1">
+          <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activePage === item.key;
