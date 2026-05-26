@@ -3,7 +3,7 @@ import CountdownCard from '../components/CountdownCard';
 import ReminderPanel from '../components/ReminderPanel';
 import TaskForm from '../components/TaskForm';
 import TaskList from '../components/TaskList';
-import type { ExamPlan, HabitReminder, PageKey, StudyTask } from '../types';
+import type { ExamPlan, HabitReminder, PageKey, RewardRecord, StudyTask } from '../types';
 import { todayISO, tomorrowISO } from '../utils/date';
 
 interface HomePageProps {
@@ -11,10 +11,11 @@ interface HomePageProps {
   plan: ExamPlan;
   habits: HabitReminder[];
   setTasks: Dispatch<SetStateAction<StudyTask[]>>;
+  onReward: (payload: { title: string; source: RewardRecord['source']; points?: number }) => void;
   onNavigate: (page: PageKey) => void;
 }
 
-function HomePage({ tasks, plan, habits, setTasks, onNavigate }: HomePageProps) {
+function HomePage({ tasks, plan, habits, setTasks, onReward, onNavigate }: HomePageProps) {
   const today = todayISO();
   const todayTasks = tasks
     .filter((task) => task.dueDate === today)
@@ -25,6 +26,12 @@ function HomePage({ tasks, plan, habits, setTasks, onNavigate }: HomePageProps) 
   };
 
   const toggleTask = (taskId: string) => {
+    const targetTask = tasks.find((task) => task.id === taskId);
+
+    if (targetTask && !targetTask.completed) {
+      onReward({ title: targetTask.title, source: '今日任务' });
+    }
+
     setTasks((currentTasks) =>
       currentTasks.map((task) => (task.id === taskId ? { ...task, completed: !task.completed } : task)),
     );

@@ -1,9 +1,12 @@
 import type {
   DailyTodo,
   DailyTodoCompletion,
+  DailyTodoTemplate,
   ExamPlan,
   HabitReminder,
+  LongTermGoal,
   Memo,
+  RewardRecord,
   StudyTask,
   WeightEntry,
   WeightProfile,
@@ -159,6 +162,12 @@ export const initialMemos: Memo[] = [
 
 export const initialDailyTodos: DailyTodo[] = [
   {
+    id: 'todo-daily-exercise',
+    title: '锻炼身体',
+    createdAt: today,
+    recurringKey: 'daily-exercise',
+  },
+  {
     id: 'todo-print-materials',
     title: '打印专业课资料',
     createdAt: today,
@@ -171,6 +180,38 @@ export const initialDailyTodos: DailyTodo[] = [
 ];
 
 export const initialDailyTodoCompletions: DailyTodoCompletion[] = [];
+
+export const initialDailyTodoTemplates: DailyTodoTemplate[] = [
+  {
+    id: 'daily-exercise',
+    title: '锻炼身体',
+    createdAt: today,
+    enabled: true,
+  },
+];
+
+export const initialLongTermGoals: LongTermGoal[] = [
+  {
+    id: 'goal-cet6',
+    title: '英语六级考试',
+    targetDate: addDays(today, 35),
+    stage: '词汇与听力巩固',
+    note: '每天保留听力、阅读和翻译小练习，考前两周开始整套模拟。',
+    completed: false,
+    createdAt: today,
+  },
+  {
+    id: 'goal-stage-test',
+    title: '专业课阶段测评',
+    targetDate: addDays(today, 56),
+    stage: '第一轮框架复盘',
+    note: '按章节梳理核心概念，测评前完成一轮自测和错题回看。',
+    completed: false,
+    createdAt: today,
+  },
+];
+
+export const initialRewardRecords: RewardRecord[] = [];
 
 export const initialWeightProfile: WeightProfile = {
   heightCm: 170,

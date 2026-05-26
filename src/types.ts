@@ -1,6 +1,12 @@
 export type Priority = 'high' | 'medium' | 'low';
 
-export type PageKey = 'home' | 'todos' | 'plan' | 'reminders' | 'memos' | 'weight';
+export type PageKey = 'home' | 'goals' | 'todos' | 'rewards' | 'plan' | 'reminders' | 'memos' | 'weight';
+export type ConfigurablePageKey = Exclude<PageKey, 'home'>;
+
+export interface NavModulePreference {
+  key: ConfigurablePageKey;
+  visible: boolean;
+}
 
 export interface StudyTask {
   id: string;
@@ -64,6 +70,14 @@ export interface DailyTodo {
   id: string;
   title: string;
   createdAt: string;
+  recurringKey?: string;
+}
+
+export interface DailyTodoTemplate {
+  id: string;
+  title: string;
+  createdAt: string;
+  enabled: boolean;
 }
 
 export interface DailyTodoCompletion {
@@ -71,6 +85,27 @@ export interface DailyTodoCompletion {
   title: string;
   completedDate: string;
   completedAt: string;
+  recurringKey?: string;
+}
+
+export interface LongTermGoal {
+  id: string;
+  title: string;
+  targetDate: string;
+  stage: string;
+  note: string;
+  completed: boolean;
+  createdAt: string;
+}
+
+export interface RewardRecord {
+  id: string;
+  title: string;
+  source: '今日任务' | '每日待办' | '长期目标';
+  points: number;
+  createdAt: string;
+  date: string;
+  time: string;
 }
 
 export interface WeightProfile {

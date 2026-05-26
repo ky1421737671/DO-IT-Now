@@ -2,7 +2,7 @@ import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { useState } from 'react';
 import { BellPlus, Check, RotateCw, Trash2 } from 'lucide-react';
 import { priorityMeta } from '../constants';
-import type { HabitReminder, StudyTask } from '../types';
+import type { HabitReminder, RewardRecord, StudyTask } from '../types';
 import { todayISO, tomorrowISO } from '../utils/date';
 import { createId } from '../utils/id';
 
@@ -11,9 +11,10 @@ interface RemindersPageProps {
   habits: HabitReminder[];
   setTasks: Dispatch<SetStateAction<StudyTask[]>>;
   setHabits: Dispatch<SetStateAction<HabitReminder[]>>;
+  onReward: (payload: { title: string; source: RewardRecord['source']; points?: number }) => void;
 }
 
-function RemindersPage({ tasks, habits, setTasks, setHabits }: RemindersPageProps) {
+function RemindersPage({ tasks, habits, setTasks, setHabits, onReward }: RemindersPageProps) {
   const [habitTitle, setHabitTitle] = useState('');
   const [habitTime, setHabitTime] = useState('08:00');
   const today = todayISO();
@@ -27,6 +28,12 @@ function RemindersPage({ tasks, habits, setTasks, setHabits }: RemindersPageProp
     .sort((a, b) => a.dueTime.localeCompare(b.dueTime));
 
   const markDone = (taskId: string) => {
+    const targetTask = tasks.find((task) => task.id === taskId);
+
+    if (targetTask && !targetTask.completed) {
+      onReward({ title: targetTask.title, source: '今日任务' });
+    }
+
     setTasks((currentTasks) =>
       currentTasks.map((task) => (task.id === taskId ? { ...task, completed: true } : task)),
     );

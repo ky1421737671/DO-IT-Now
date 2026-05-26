@@ -1,15 +1,18 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
-import type { DailyTodo, DailyTodoCompletion } from '../types';
+import type { DailyTodo, DailyTodoCompletion, DailyTodoTemplate, RewardRecord } from '../types';
 import { addDays, todayISO } from '../utils/date';
 import { createId } from '../utils/id';
 
 interface DailyTodosPageProps {
   todos: DailyTodo[];
   setTodos: Dispatch<SetStateAction<DailyTodo[]>>;
+  templates: DailyTodoTemplate[];
+  setTemplates: Dispatch<SetStateAction<DailyTodoTemplate[]>>;
   completions: DailyTodoCompletion[];
   setCompletions: Dispatch<SetStateAction<DailyTodoCompletion[]>>;
+  onReward: (payload: { title: string; source: RewardRecord['source']; points?: number }) => void;
 }
 
 const formatTime = (date: Date) => {
@@ -28,8 +31,17 @@ const formatDateLabel = (dateISO: string) => {
   }).format(new Date(`${dateISO}T00:00:00`));
 };
 
-function DailyTodosPage({ todos, setTodos, completions, setCompletions }: DailyTodosPageProps) {
+function DailyTodosPage({
+  todos,
+  setTodos,
+  templates,
+  setTemplates,
+  completions,
+  setCompletions,
+  onReward,
+}: DailyTodosPageProps) {
   const [title, setTitle] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const today = todayISO();
   const selectedDateCompletions = completions.filter((completion) => completion.completedDate === selectedDate);
@@ -48,6 +60,59 @@ function DailyTodosPage({ todos, setTodos, completions, setCompletions }: DailyT
         ? '这一天还没有完成记录。'
         : '未来这一天还没有记录。';
 
+  useEffect(() => {
+    setTodos((currentTodos) => {
+      let changed = false;
+      let nextTodos = currentTodos;
+
+      templates
+        .filter((template) => template.enabled)
+        .forEach((template) => {
+        const completedToday = completions.some(
+          (completion) => completion.recurringKey === template.id && completion.completedDate === today,
+        );
+        const existingTodo = nextTodos.find((todo) => todo.recurringKey === template.id);
+
+        if (completedToday && existingTodo) {
+          changed = true;
+          nextTodos = nextTodos.filter((todo) => todo.recurringKey !== template.id);
+          return;
+        }
+
+        if (!completedToday && existingTodo && (existingTodo.createdAt !== today || existingTodo.title !== template.title)) {
+          changed = true;
+          nextTodos = nextTodos.map((todo) =>
+            todo.recurringKey === template.id ? { ...todo, title: template.title, createdAt: today } : todo,
+          );
+          return;
+        }
+
+        if (!completedToday && !existingTodo) {
+          changed = true;
+          nextTodos = [
+            {
+              id: createId('daily-fixed'),
+              title: template.title,
+              createdAt: today,
+              recurringKey: template.id,
+            },
+            ...nextTodos,
+          ];
+        }
+      });
+
+      return changed ? nextTodos : currentTodos;
+    });
+  }, [completions, setTodos, templates, today]);
+
+  useEffect(() => {
+    setTodos((currentTodos) => {
+      const enabledTemplateIds = new Set(templates.filter((template) => template.enabled).map((template) => template.id));
+      const nextTodos = currentTodos.filter((todo) => !todo.recurringKey || enabledTemplateIds.has(todo.recurringKey));
+      return nextTodos.length === currentTodos.length ? currentTodos : nextTodos;
+    });
+  }, [setTodos, templates]);
+
   const addTodo = (event: FormEvent) => {
     event.preventDefault();
     const trimmedTitle = title.trim();
@@ -56,15 +121,31 @@ function DailyTodosPage({ todos, setTodos, completions, setCompletions }: DailyT
       return;
     }
 
+    const recurringKey = isRecurring ? createId('daily-template') : undefined;
+
+    if (recurringKey) {
+      setTemplates((currentTemplates) => [
+        {
+          id: recurringKey,
+          title: trimmedTitle,
+          createdAt: todayISO(),
+          enabled: true,
+        },
+        ...currentTemplates,
+      ]);
+    }
+
     setTodos((currentTodos) => [
       {
         id: createId('daily-todo'),
         title: trimmedTitle,
         createdAt: todayISO(),
+        recurringKey,
       },
       ...currentTodos,
     ]);
     setTitle('');
+    setIsRecurring(false);
   };
 
   const completeTodo = (todo: DailyTodo) => {
@@ -75,13 +156,25 @@ function DailyTodosPage({ todos, setTodos, completions, setCompletions }: DailyT
         title: todo.title,
         completedDate: todayISO(),
         completedAt: formatTime(new Date()),
+        recurringKey: todo.recurringKey,
       },
       ...currentCompletions,
     ]);
+    onReward({ title: todo.title, source: '每日待办' });
   };
 
-  const removeTodo = (todoId: string) => {
-    setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== todoId));
+  const removeTodo = (todo: DailyTodo) => {
+    if (todo.recurringKey) {
+      setTemplates((currentTemplates) =>
+        currentTemplates.map((template) =>
+          template.id === todo.recurringKey ? { ...template, enabled: false } : template,
+        ),
+      );
+      setTodos((currentTodos) => currentTodos.filter((currentTodo) => currentTodo.recurringKey !== todo.recurringKey));
+      return;
+    }
+
+    setTodos((currentTodos) => currentTodos.filter((currentTodo) => currentTodo.id !== todo.id));
   };
 
   const shiftSelectedDate = (days: number) => {
@@ -111,6 +204,15 @@ function DailyTodosPage({ todos, setTodos, completions, setCompletions }: DailyT
               placeholder="例如：买资料、整理错题、预约打印"
               className="focus-ring resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm leading-6"
             />
+          </label>
+          <label className="mt-3 flex items-center gap-2 text-sm font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={isRecurring}
+              onChange={(event) => setIsRecurring(event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+            />
+            设为每日固定
           </label>
         </form>
 
@@ -144,15 +246,22 @@ function DailyTodosPage({ todos, setTodos, completions, setCompletions }: DailyT
 
                   <div className="min-w-0 flex-1">
                     <p className="break-words text-sm font-semibold leading-6 text-slate-950">{todo.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">{todo.createdAt}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span>{todo.createdAt}</span>
+                      {todo.recurringKey && (
+                        <span className="rounded-lg border border-teal-100 bg-teal-50 px-2 py-0.5 text-teal-700">
+                          每日固定
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => removeTodo(todo.id)}
+                    onClick={() => removeTodo(todo)}
                     className="focus-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-700"
-                    aria-label="删除待办"
-                    title="删除待办"
+                    aria-label={todo.recurringKey ? '删除固定待办' : '删除待办'}
+                    title={todo.recurringKey ? '删除固定待办' : '删除待办'}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
