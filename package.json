@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "npm run build && node scripts/serve-dist.mjs",
     "vite:dev": "vite --host 127.0.0.1 --port 5173",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build --base ./",
     "preview": "node scripts/serve-dist.mjs"
   },
   "dependencies": {

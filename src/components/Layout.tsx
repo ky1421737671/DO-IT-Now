@@ -32,6 +32,8 @@ const pageTitles: Record<PageKey, string> = {
   reminders: '提醒',
   memos: '备忘',
   weight: '轻体记录',
+  coreTraining: '核心训练',
+  dataTransfer: '数据迁移',
 };
 
 const formatDate = () => {

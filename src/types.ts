@@ -1,6 +1,16 @@
 export type Priority = 'high' | 'medium' | 'low';
 
-export type PageKey = 'home' | 'goals' | 'todos' | 'rewards' | 'plan' | 'reminders' | 'memos' | 'weight';
+export type PageKey =
+  | 'home'
+  | 'goals'
+  | 'todos'
+  | 'rewards'
+  | 'plan'
+  | 'reminders'
+  | 'memos'
+  | 'weight'
+  | 'coreTraining'
+  | 'dataTransfer';
 export type ConfigurablePageKey = Exclude<PageKey, 'home'>;
 
 export interface NavModulePreference {

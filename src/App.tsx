@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Award, Bell, CalendarCheck, ClipboardList, Flag, ListTodo, NotebookPen, Scale, Sparkles } from 'lucide-react';
+import {
+  Award,
+  Bell,
+  CalendarCheck,
+  ClipboardList,
+  Dumbbell,
+  Flag,
+  ListTodo,
+  NotebookPen,
+  RotateCcwSquare,
+  Scale,
+  Sparkles,
+} from 'lucide-react';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import PlanPage from './pages/PlanPage';
@@ -9,6 +21,8 @@ import DailyTodosPage from './pages/DailyTodosPage';
 import WeightPage from './pages/WeightPage';
 import LongTermGoalsPage from './pages/LongTermGoalsPage';
 import RewardsPage from './pages/RewardsPage';
+import CoreTrainingPage from './pages/CoreTrainingPage';
+import DataTransferPage from './pages/DataTransferPage';
 import {
   initialDailyTodoCompletions,
   initialDailyTodoTemplates,
@@ -51,6 +65,8 @@ const navItems = [
   { key: 'reminders' as const, label: '提醒', icon: Bell },
   { key: 'memos' as const, label: '备忘', icon: NotebookPen },
   { key: 'weight' as const, label: '轻体记录', icon: Scale },
+  { key: 'coreTraining' as const, label: '核心训练', icon: Dumbbell },
+  { key: 'dataTransfer' as const, label: '数据迁移', icon: RotateCcwSquare },
 ];
 
 const configurableModuleKeys: ConfigurablePageKey[] = [
@@ -61,6 +77,8 @@ const configurableModuleKeys: ConfigurablePageKey[] = [
   'reminders',
   'memos',
   'weight',
+  'coreTraining',
+  'dataTransfer',
 ];
 
 const defaultModulePreferences: NavModulePreference[] = configurableModuleKeys.map((key) => ({
@@ -304,6 +322,8 @@ function App() {
           setEntries={setWeightEntries}
         />
       )}
+      {activePage === 'coreTraining' && <CoreTrainingPage />}
+      {activePage === 'dataTransfer' && <DataTransferPage />}
       </Layout>
       {rewardFeedback && (
         <div
