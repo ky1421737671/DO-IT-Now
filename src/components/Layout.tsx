@@ -1,5 +1,5 @@
-import { useState, type ComponentType, type ReactNode } from 'react';
-import { ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
+import { useState, type ComponentType, type DragEvent, type ReactNode } from 'react';
+import { GripVertical, SlidersHorizontal } from 'lucide-react';
 import type { ConfigurablePageKey, NavModulePreference, PageKey } from '../types';
 
 interface NavItem {
@@ -15,7 +15,7 @@ interface LayoutProps {
   activePage: PageKey;
   onNavigate: (page: PageKey) => void;
   onToggleModule: (key: ConfigurablePageKey) => void;
-  onMoveModule: (key: ConfigurablePageKey, direction: 'up' | 'down') => void;
+  onReorderModule: (draggedKey: ConfigurablePageKey, targetKey: ConfigurablePageKey) => void;
   reminderCounts: {
     overdue: number;
     todayTasks: number;
@@ -51,13 +51,40 @@ function Layout({
   activePage,
   onNavigate,
   onToggleModule,
-  onMoveModule,
+  onReorderModule,
   reminderCounts,
   children,
 }: LayoutProps) {
   const [isModuleManagerOpen, setIsModuleManagerOpen] = useState(false);
+  const [draggingModuleKey, setDraggingModuleKey] = useState<ConfigurablePageKey | null>(null);
   const moduleItemMap = new Map(moduleItems.map((item) => [item.key, item]));
   const canOpenReminders = navItems.some((item) => item.key === 'reminders');
+
+  const isConfigurableModuleKey = (key: string): key is ConfigurablePageKey => {
+    return moduleItemMap.has(key as ConfigurablePageKey);
+  };
+
+  const handleDragStart = (event: DragEvent<HTMLDivElement>, key: ConfigurablePageKey) => {
+    setDraggingModuleKey(key);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', key);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>, targetKey: ConfigurablePageKey) => {
+    event.preventDefault();
+
+    const draggedKey = event.dataTransfer.getData('text/plain') || draggingModuleKey;
+    if (draggedKey && draggedKey !== targetKey && isConfigurableModuleKey(draggedKey)) {
+      onReorderModule(draggedKey, targetKey);
+    }
+
+    setDraggingModuleKey(null);
+  };
 
   return (
     <div className="min-h-screen bg-[#f6f8fb] text-slate-800">
@@ -126,9 +153,8 @@ function Layout({
 
             {isModuleManagerOpen && (
               <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs leading-5 text-slate-500">首页固定，其余模块可显示或调整顺序。</p>
-                <div className="mt-3 grid gap-2">
-                  {modulePreferences.map((preference, index) => {
+                <div className="grid gap-2">
+                  {modulePreferences.map((preference) => {
                     const moduleItem = moduleItemMap.get(preference.key);
 
                     if (!moduleItem) {
@@ -136,46 +162,40 @@ function Layout({
                     }
 
                     const Icon = moduleItem.icon;
-                    const isFirst = index === 0;
-                    const isLast = index === modulePreferences.length - 1;
 
                     return (
                       <div
                         key={preference.key}
-                        className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2"
+                        draggable
+                        onDragStart={(event) => handleDragStart(event, preference.key)}
+                        onDragOver={handleDragOver}
+                        onDrop={(event) => handleDrop(event, preference.key)}
+                        onDragEnd={() => setDraggingModuleKey(null)}
+                        className={`flex items-center gap-2 rounded-lg border bg-white px-2 py-2 transition ${
+                          draggingModuleKey === preference.key
+                            ? 'border-teal-300 opacity-60'
+                            : 'border-slate-200 hover:border-teal-200'
+                        }`}
                       >
-                        <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-slate-700">
+                        <span
+                          className="inline-flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg text-slate-400 active:cursor-grabbing"
+                          aria-hidden="true"
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </span>
+                        <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">
+                          {moduleItem.label}
+                        </span>
+                        <label className="inline-flex shrink-0 items-center">
+                          <span className="sr-only">{moduleItem.label}</span>
                           <input
                             type="checkbox"
                             checked={preference.visible}
                             onChange={() => onToggleModule(preference.key)}
                             className="h-4 w-4 rounded border-slate-300 text-teal-600"
                           />
-                          <Icon className="h-4 w-4 shrink-0 text-slate-500" />
-                          <span className="truncate">{moduleItem.label}</span>
                         </label>
-                        <div className="flex shrink-0 gap-1">
-                          <button
-                            type="button"
-                            onClick={() => onMoveModule(preference.key, 'up')}
-                            disabled={isFirst}
-                            className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                            aria-label={`${moduleItem.label} 上移`}
-                            title="上移"
-                          >
-                            <ChevronUp className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onMoveModule(preference.key, 'down')}
-                            disabled={isLast}
-                            className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                            aria-label={`${moduleItem.label} 下移`}
-                            title="下移"
-                          >
-                            <ChevronDown className="h-4 w-4" />
-                          </button>
-                        </div>
                       </div>
                     );
                   })}

@@ -241,19 +241,18 @@ function App() {
     );
   };
 
-  const moveModule = (key: ConfigurablePageKey, direction: 'up' | 'down') => {
+  const reorderModule = (draggedKey: ConfigurablePageKey, targetKey: ConfigurablePageKey) => {
     setModulePreferences((currentPreferences) => {
       const nextPreferences = normalizeModulePreferences(currentPreferences);
-      const currentIndex = nextPreferences.findIndex((preference) => preference.key === key);
-      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      const draggedIndex = nextPreferences.findIndex((preference) => preference.key === draggedKey);
+      const targetIndex = nextPreferences.findIndex((preference) => preference.key === targetKey);
 
-      if (currentIndex < 0 || targetIndex < 0 || targetIndex >= nextPreferences.length) {
+      if (draggedIndex < 0 || targetIndex < 0 || draggedIndex === targetIndex) {
         return nextPreferences;
       }
 
-      const movedPreference = nextPreferences[currentIndex];
-      nextPreferences[currentIndex] = nextPreferences[targetIndex];
-      nextPreferences[targetIndex] = movedPreference;
+      const [movedPreference] = nextPreferences.splice(draggedIndex, 1);
+      nextPreferences.splice(targetIndex, 0, movedPreference);
 
       return [...nextPreferences];
     });
@@ -275,7 +274,7 @@ function App() {
         activePage={activePage}
         onNavigate={setActivePage}
         onToggleModule={toggleModuleVisibility}
-        onMoveModule={moveModule}
+        onReorderModule={reorderModule}
         reminderCounts={reminderCounts}
       >
       {activePage === 'home' && (
